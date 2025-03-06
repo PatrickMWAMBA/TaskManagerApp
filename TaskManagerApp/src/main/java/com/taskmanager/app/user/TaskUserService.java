@@ -76,12 +76,11 @@ public class TaskUserService {
         return convertTaskUserToDto(taskUser);
     }
     
-    public Long delete(Long userId) {
+    public void delete(Long userId) {
     	TaskUser taskUser = taskUserRepository.findById(userId)
                 .orElseThrow(() -> new TodoItemNotFoundException("User not found with id " + userId));
         
     	taskUserRepository.delete(taskUser);
-        return userId;
     }
 
 

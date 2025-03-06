@@ -63,12 +63,11 @@ public class TodoItemService {
         return convertTodoItemToDto(todoItemUpdated);
     }
 
-    public Long delete(Long todoItemId) {
+    public void delete(Long todoItemId) {
         TodoItem todoItem = todoItemRepository.findById(todoItemId)
                 .orElseThrow(() -> new TodoItemNotFoundException("Todo item not found with id " + todoItemId));
         
         todoItemRepository.delete(todoItem);
-        return todoItemId;
     }
 
     public TodoItemResponse convertTodoItemToDto(TodoItem todoItem) {
