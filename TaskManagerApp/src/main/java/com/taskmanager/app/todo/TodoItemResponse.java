@@ -18,6 +18,8 @@ import lombok.Setter;
 @Setter
 @Getter
 public class TodoItemResponse {
+	
+    private Long id;
 		
 	@NotNull
 	private String description;
@@ -32,6 +34,7 @@ public class TodoItemResponse {
     private TodoStatus status; // Add status field
     
     private Long user;
+    
 
 	
 }

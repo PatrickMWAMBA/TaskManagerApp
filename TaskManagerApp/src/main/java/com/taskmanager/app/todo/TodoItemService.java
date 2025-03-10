@@ -76,6 +76,7 @@ public class TodoItemService {
         todoItemResponse.setComplete(todoItem.getComplete());
         todoItemResponse.setDueBy(todoItem.getDueBy());
         todoItemResponse.setStatus(todoItem.getStatus());
+        todoItemResponse.setId(todoItem.getId());
 
         if (todoItem.getTaskUser() != null) {
             todoItemResponse.setUser(todoItem.getTaskUser().getId()); // Set user ID
@@ -99,6 +100,8 @@ public class TodoItemService {
     
     public TodoItem convertDtoToTodoItem(TodoItemResponse todoItemResponse) {
         TodoItem todoItem = new TodoItem();
+        
+        todoItem.setId(todoItemResponse.getId());
         todoItem.setDescription(todoItemResponse.getDescription());
         todoItem.setDueBy(todoItemResponse.getDueBy());
         todoItem.setComplete(todoItemResponse.getComplete());

@@ -36,12 +36,12 @@ public class TaskUser {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @NotBlank
-    @Email
+    @NotBlank(message = "Email must not be blank")
+    @Email(message = "Email should be valid")
     @Column(nullable = false, unique = true)
     private String email;
 
-    @NotBlank
+    @NotBlank(message = "Password must not be blank")
     @Size(min = 6)
     @Column(nullable = false)
     private String password;
