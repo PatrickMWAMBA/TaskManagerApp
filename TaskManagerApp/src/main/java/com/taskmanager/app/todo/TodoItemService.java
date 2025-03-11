@@ -69,6 +69,14 @@ public class TodoItemService {
         
         todoItemRepository.delete(todoItem);
     }
+    
+    public List<TodoItemResponse> getAllTasksByUserId(Long userId) {
+        List<TodoItem> todoItems = todoItemRepository.getAllTasksByTaskUserId(userId);
+        return todoItems.stream()
+                .map(this::convertTodoItemToDto)
+                .collect(Collectors.toList());
+    }
+
 
     public TodoItemResponse convertTodoItemToDto(TodoItem todoItem) {
         TodoItemResponse todoItemResponse = new TodoItemResponse();

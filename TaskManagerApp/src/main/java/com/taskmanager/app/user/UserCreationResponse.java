@@ -15,6 +15,8 @@ import lombok.Setter;
 @Setter
 @Getter
 public class UserCreationResponse {
+	
+	private Long id;
 
     @NotBlank
     @Size(min = 3, max = 50)

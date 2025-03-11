@@ -30,7 +30,7 @@ public class TaskUserService {
 	public UserCreationResponse get(Long userId) {
 
 		TaskUser taskUser = taskUserRepository.findById(userId)
-				.orElseThrow(() -> new TodoItemNotFoundException("Todo item not found with id " + userId));
+				.orElseThrow(() -> new TaskUserNotFoundException("User not found with id " + userId));
 		return convertTaskUserToDto(taskUser);
 
 	}
@@ -78,7 +78,7 @@ public class TaskUserService {
     
     public void delete(Long userId) {
     	TaskUser taskUser = taskUserRepository.findById(userId)
-                .orElseThrow(() -> new TodoItemNotFoundException("User not found with id " + userId));
+                .orElseThrow(() -> new TaskUserNotFoundException("User not found with id " + userId));
         
     	taskUserRepository.delete(taskUser);
     }
@@ -92,6 +92,7 @@ public class TaskUserService {
 
 		userCreationResponse.setUsername(taskUser.getUsername());
 		userCreationResponse.setEmail(taskUser.getEmail());
+		userCreationResponse.setId(taskUser.getId());
 
 		// Convert TodoItems to TodoItemResponses
 		userCreationResponse
@@ -106,6 +107,7 @@ public class TaskUserService {
 
 		taskUser.setUsername(userCreationResponse.getUsername());
 		taskUser.setEmail(userCreationResponse.getEmail());
+		taskUser.setId(userCreationResponse.getId());
 
 		// Convert TodoItemResponses to TodoItems
 		taskUser.setTodoItems(userCreationResponse.getTodoItems().stream()

@@ -152,4 +152,35 @@ class TodoItemServiceTest {
         assertThat(updated.getComplete()).isTrue();  // Ensure the 'complete' flag is correctly updated
         assertThat(updated.getDueBy()).isEqualTo(updateRequest.getDueBy());
     }
+    
+    @Test
+    void shouldRetrieveTasksForUser() {
+        // Given
+        TaskUser taskUser = new TaskUser();
+        taskUser.setUsername("Test User");
+        taskUser.setEmail("test@example.com");
+        taskUser.setPassword("password");
+        taskUser = taskUserRepository.save(taskUser);
+
+        TodoItemCreationRequest request1 = new TodoItemCreationRequest();
+        request1.setDescription("User Task 1");
+        request1.setDueBy(LocalDateTime.now().plusDays(1));
+        request1.setUser(taskUser.getId());
+
+        TodoItemCreationRequest request2 = new TodoItemCreationRequest();
+        request2.setDescription("User Task 2");
+        request2.setDueBy(LocalDateTime.now().plusDays(2));
+        request2.setUser(taskUser.getId());
+
+        underTest.create(request1);
+        underTest.create(request2);
+
+        // When
+        List<TodoItemResponse> userTasks = underTest.getAllTasksByUserId(taskUser.getId());
+
+        // Then
+        assertThat(userTasks).hasSize(2);
+        assertThat(userTasks).extracting("description").contains("User Task 1", "User Task 2");
+    }
+
 }
