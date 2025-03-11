@@ -49,6 +49,12 @@ public class TodoItemResource {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+    
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<TodoItemResponse>> getAllTasksByUserId(@PathVariable Long userId) {
+        List<TodoItemResponse> todoItemResponses = todoItemService.getAllTasksByUserId(userId);
+        return new ResponseEntity<>(todoItemResponses, HttpStatus.OK);
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTodoItem(@PathVariable("id") Long todoItemId) {
