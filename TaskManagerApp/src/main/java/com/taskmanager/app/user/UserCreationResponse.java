@@ -27,4 +27,7 @@ public class UserCreationResponse {
     private String email;
     
     List<TodoItemResponse> todoItems = new ArrayList<>();
+    
+    private List<Long> roles;
+
 }

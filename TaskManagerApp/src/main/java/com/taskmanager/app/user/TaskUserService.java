@@ -1,10 +1,12 @@
 package com.taskmanager.app.user;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.taskmanager.app.role.Role;
 import com.taskmanager.app.todo.TodoItem;
 import com.taskmanager.app.todo.TodoItemCreationRequest;
 import com.taskmanager.app.todo.TodoItemNotFoundException;
@@ -31,63 +33,76 @@ public class TaskUserService {
 
 		TaskUser taskUser = taskUserRepository.findById(userId)
 				.orElseThrow(() -> new TaskUserNotFoundException("User not found with id " + userId));
-		return convertTaskUserToDto(taskUser);
+		return convertEntityToResponse(taskUser);
 
 	}
+
+	public UserCreationResponse create(UserCreationRequest userCreationRequest) {
+		TaskUser taskUser = convertRequestToEntity(userCreationRequest);
+		System.out.println("Saving User: " + taskUser); // Log before saving
+		TaskUser taskUserSaved = taskUserRepository.save(taskUser);
+		return convertEntityToResponse(taskUserSaved);
+	}
+
+	public List<UserCreationResponse> getAll() {
+		return taskUserRepository.findAll().stream().map(this::convertEntityToResponse).collect(Collectors.toList());
+	}
+
+	@Transactional
+	public UserCreationResponse update(Long userId, UserCreationResponse userCreationResponse) {
+		System.out.println("🔍 Checking user existence for ID: " + userId);
+
+		TaskUser taskUser = taskUserRepository.findById(userId).orElseThrow(() -> {
+			System.out.println("❌ User NOT FOUND with ID: " + userId);
+			return new TodoItemNotFoundException("User not found with id " + userId);
+		});
+
+		System.out.println("✅ User found: " + taskUser.getUsername());
+
+		taskUser.setUsername(userCreationResponse.getUsername());
+		taskUser.setEmail(userCreationResponse.getEmail());
+
+		List<TodoItem> updatedTodoItems = userCreationResponse.getTodoItems().stream()
+				.map(todoItemService::convertDtoToTodoItem).collect(Collectors.toList());
+
+		taskUser.setTodoItems(updatedTodoItems);
+		Set<Role> roles = userCreationResponse.getRoles().stream().map(roleId -> {
+			Role role = new Role();
+			role.setId(roleId);
+			return role;
+		}).collect(Collectors.toSet());
+
+		taskUser.setRoles(roles);
+
+		taskUser = taskUserRepository.save(taskUser);
+
+		System.out.println("✔ User updated successfully.");
+
+		return convertEntityToResponse(taskUser);
+	}
+
+	public void delete(Long userId) {
+		TaskUser taskUser = taskUserRepository.findById(userId)
+				.orElseThrow(() -> new TaskUserNotFoundException("User not found with id " + userId));
+
+		taskUserRepository.delete(taskUser);
+	}
+
+	public List<UserCreationResponse> getUsersByRole(Long roleId) {
+		List<TaskUser> users = taskUserRepository.findByRolesId(roleId);
+		return users.stream().map(this::convertEntityToResponse).collect(Collectors.toList());
+	}
 	
-    public UserCreationResponse create(UserCreationRequest userCreationRequest) {
-        TaskUser taskUser = convertDtoToTaskUser(userCreationRequest);
-        System.out.println("Saving User: " + taskUser); // Log before saving
-        TaskUser taskUserSaved = taskUserRepository.save(taskUser);
-        return convertTaskUserToDto(taskUserSaved);
-    }
-
-    public List<UserCreationResponse> getAll() {
-        return taskUserRepository.findAll().stream()
-                .map(this::convertTaskUserToDto)
-                .collect(Collectors.toList());
-    }
-    
-    @Transactional
-    public UserCreationResponse update(Long userId, UserCreationResponse userCreationResponse) {
-        System.out.println("🔍 Checking user existence for ID: " + userId);
-        
-        TaskUser taskUser = taskUserRepository.findById(userId)
-                .orElseThrow(() -> {
-                    System.out.println("❌ User NOT FOUND with ID: " + userId);
-                    return new TodoItemNotFoundException("User not found with id " + userId);
-                });
-
-        System.out.println("✅ User found: " + taskUser.getUsername());
-
-        taskUser.setUsername(userCreationResponse.getUsername());
-        taskUser.setEmail(userCreationResponse.getEmail());
-
-        List<TodoItem> updatedTodoItems = userCreationResponse.getTodoItems().stream()
-                .map(todoItemService::convertDtoToTodoItem)
-                .collect(Collectors.toList());
-
-        taskUser.setTodoItems(updatedTodoItems);
-
-        taskUser = taskUserRepository.save(taskUser);
-
-        System.out.println("✔ User updated successfully.");
-
-        return convertTaskUserToDto(taskUser);
-    }
-    
-    public void delete(Long userId) {
-    	TaskUser taskUser = taskUserRepository.findById(userId)
-                .orElseThrow(() -> new TaskUserNotFoundException("User not found with id " + userId));
-        
-    	taskUserRepository.delete(taskUser);
-    }
+	public UserCreationResponse findByEmail(String email) {
+	    TaskUser user = taskUserRepository.findByEmail(email)
+	            .orElseThrow(() -> new TaskUserNotFoundException("User not found with email " + email));
+	    return convertEntityToResponse(user);
+	}
 
 
-    
-    //Mapper functions below 
-    
-	private UserCreationResponse convertTaskUserToDto(TaskUser taskUser) {
+	// Mapper functions below
+	
+	private UserCreationResponse convertEntityToResponse(TaskUser taskUser) {
 		UserCreationResponse userCreationResponse = new UserCreationResponse();
 
 		userCreationResponse.setUsername(taskUser.getUsername());
@@ -95,14 +110,19 @@ public class TaskUserService {
 		userCreationResponse.setId(taskUser.getId());
 
 		// Convert TodoItems to TodoItemResponses
-		userCreationResponse
-				.setTodoItems(taskUser.getTodoItems().stream().map(todoItemService::convertTodoItemToDto) 
-					.collect(Collectors.toList()));
+		userCreationResponse.setTodoItems(taskUser.getTodoItems().stream().map(todoItemService::convertTodoItemToDto)
+				.collect(Collectors.toList()));
+
+		// Convert Set<Role> to List of Role IDs
+		List<Long> roleIds = taskUser.getRoles().stream().map(Role::getId) // Get role ID
+				.collect(Collectors.toList());
+
+		userCreationResponse.setRoles(roleIds); // Set the roles as a list of role IDs
 
 		return userCreationResponse;
 	}
 
-	private TaskUser convertDtoToTaskUser(UserCreationResponse userCreationResponse) {
+	private TaskUser convertResponseToEntity(UserCreationResponse userCreationResponse) {
 		TaskUser taskUser = new TaskUser();
 
 		taskUser.setUsername(userCreationResponse.getUsername());
@@ -111,24 +131,41 @@ public class TaskUserService {
 
 		// Convert TodoItemResponses to TodoItems
 		taskUser.setTodoItems(userCreationResponse.getTodoItems().stream()
-				.map(response -> todoItemService.convertDtoToTodoItem(convertResponseToRequest(response)))
+				.map(response -> todoItemService.convertDtoToTodoItem(convertTodoResponseToTodoRequest(response)))
 				.collect(Collectors.toList()));
+
+		// Convert role IDs to Role entities
+		Set<Role> roles = userCreationResponse.getRoles().stream().map(roleId -> {
+			Role role = new Role();
+			role.setId(roleId);
+			return role;
+		}).collect(Collectors.toSet());
+
+		taskUser.setRoles(roles);
 
 		return taskUser;
 	}
-	
-	private TaskUser convertDtoToTaskUser(UserCreationRequest userCreationRequest) {
+
+	private TaskUser convertRequestToEntity(UserCreationRequest userCreationRequest) {
 		TaskUser taskUser = new TaskUser();
 
 		taskUser.setUsername(userCreationRequest.getUsername());
 		taskUser.setEmail(userCreationRequest.getEmail());
 		taskUser.setPassword(userCreationRequest.getPassword());
 
+		// Convert List of Role IDs to Set<Role>
+		Set<Role> roles = userCreationRequest.getRoles().stream().map(roleId -> {
+			Role role = new Role();
+			role.setId(roleId);
+			return role;
+		}).collect(Collectors.toSet());
+
+		taskUser.setRoles(roles);
+
 		return taskUser;
 	}
 
-
-	private TodoItemCreationRequest convertResponseToRequest(TodoItemResponse response) {
+	private TodoItemCreationRequest convertTodoResponseToTodoRequest(TodoItemResponse response) {
 		TodoItemCreationRequest request = new TodoItemCreationRequest();
 		request.setDescription(response.getDescription());
 		request.setDueBy(response.getDueBy());

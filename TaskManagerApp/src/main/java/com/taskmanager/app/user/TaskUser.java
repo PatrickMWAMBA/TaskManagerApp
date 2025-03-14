@@ -3,11 +3,13 @@ package com.taskmanager.app.user;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.taskmanager.app.role.Role;
 import com.taskmanager.app.todo.TodoItem;
 
 import jakarta.persistence.*;
@@ -56,6 +58,15 @@ public class TaskUser {
 
     @OneToMany(mappedBy = "taskUser", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TodoItem> todoItems = new ArrayList<>();
+    
+    @ManyToMany
+    @JoinTable(
+            name = "UserRoles",
+            joinColumns = @JoinColumn(name = "userId"),
+            inverseJoinColumns = @JoinColumn(name = "roleId")
+    )
+    private Set<Role> roles;
+
     
     @Override
     public String toString() {
