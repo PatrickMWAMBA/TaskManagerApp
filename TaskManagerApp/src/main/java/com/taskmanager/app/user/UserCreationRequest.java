@@ -19,6 +19,7 @@ public class UserCreationRequest {
 
     @NotBlank
     @Email
+    @UserEmailUnique
     private String email;
 
     @NotBlank

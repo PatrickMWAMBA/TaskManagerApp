@@ -1,42 +1,50 @@
 package com.taskmanager.app.todo;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.stereotype.Service;
 
+import com.taskmanager.app.project.Project;
+import com.taskmanager.app.project.ProjectNotFoundException;
+import com.taskmanager.app.project.ProjectRepository;
+import com.taskmanager.app.project.ProjectResponse;
 import com.taskmanager.app.user.TaskUser;
 import com.taskmanager.app.user.TaskUserNotFoundException;
 import com.taskmanager.app.user.TaskUserRepository;
+import com.taskmanager.app.user.UserCreationResponse;
 
 @Service
 public class TodoItemService {
 
     private final TodoItemRepository todoItemRepository;
     private final TaskUserRepository taskUserRepository;
+    private final ProjectRepository projectRepository;
     
-    public TodoItemService(TodoItemRepository todoItemRepository, TaskUserRepository taskUserRepository) {
+    public TodoItemService(TodoItemRepository todoItemRepository, TaskUserRepository taskUserRepository, ProjectRepository projectRepository) {
         this.todoItemRepository = todoItemRepository;
 		this.taskUserRepository = taskUserRepository;
+		this.projectRepository = projectRepository;
     }
 
     public TodoItemResponse get(Long todoItemId) {
         TodoItem todoItem = todoItemRepository.findById(todoItemId)
                 .orElseThrow(() -> new TodoItemNotFoundException("Todo item not found with id " + todoItemId));
-        return convertTodoItemToDto(todoItem);
+        return convertTodoItemToResponse(todoItem);
     }
 
     public TodoItemResponse create(TodoItemCreationRequest todoItemCreationRequest) {
-        TodoItem todoItem = convertDtoToTodoItem(todoItemCreationRequest);
+        TodoItem todoItem = convertRequestToTodoItem(todoItemCreationRequest);
         System.out.println("Saving TodoItem: " + todoItem); // Log before saving
         TodoItem todoItemSaved = todoItemRepository.save(todoItem);
-        return convertTodoItemToDto(todoItemSaved);
+        return convertTodoItemToResponse(todoItemSaved);
     }
 
     public List<TodoItemResponse> getAllTodoItems() {
         return todoItemRepository.findAll().stream()
-                .map(this::convertTodoItemToDto)
+                .map(this::convertTodoItemToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -49,7 +57,7 @@ public class TodoItemService {
         todoItem.setDueBy(todoItemResponse.getDueBy());
         todoItem.setStatus(todoItemResponse.getStatus());
         
-        TaskUser taskUser = taskUserRepository.findById(todoItemResponse.getUser())
+        TaskUser taskUser = taskUserRepository.findById(todoItemResponse.getUser().getId())
                 .orElseThrow(() -> new TaskUserNotFoundException("User not found with id " + todoItemResponse.getUser()));
 
         todoItem.setTaskUser(taskUser);
@@ -60,7 +68,7 @@ public class TodoItemService {
         }
 
         TodoItem todoItemUpdated = todoItemRepository.save(todoItem);
-        return convertTodoItemToDto(todoItemUpdated);
+        return convertTodoItemToResponse(todoItemUpdated);
     }
 
     public void delete(Long todoItemId) {
@@ -73,35 +81,87 @@ public class TodoItemService {
     public List<TodoItemResponse> getAllTasksByUserId(Long userId) {
         List<TodoItem> todoItems = todoItemRepository.getAllTasksByTaskUserId(userId);
         return todoItems.stream()
-                .map(this::convertTodoItemToDto)
+                .map(this::convertTodoItemToResponse)
+                .collect(Collectors.toList());
+    }
+    
+    public List<TodoItemResponse> getAllTasksForProject(Long projectId) {
+        List<TodoItem> todoItems = todoItemRepository.findByProjectId(projectId); // Fetch tasks by project
+        return todoItems.stream()
+                .map(this::convertTodoItemToResponse)
                 .collect(Collectors.toList());
     }
 
 
-    public TodoItemResponse convertTodoItemToDto(TodoItem todoItem) {
+
+    public TodoItemResponse convertTodoItemToResponse(TodoItem todoItem) {
         TodoItemResponse todoItemResponse = new TodoItemResponse();
+
+        todoItemResponse.setId(todoItem.getId());
         todoItemResponse.setDescription(todoItem.getDescription());
         todoItemResponse.setComplete(todoItem.getComplete());
         todoItemResponse.setDueBy(todoItem.getDueBy());
         todoItemResponse.setStatus(todoItem.getStatus());
-        todoItemResponse.setId(todoItem.getId());
 
+        // Map TaskUser to UserCreationResponse
         if (todoItem.getTaskUser() != null) {
-            todoItemResponse.setUser(todoItem.getTaskUser().getId()); // Set user ID
+            UserCreationResponse userResponse = new UserCreationResponse();
+            userResponse.setId(todoItem.getTaskUser().getId());
+            userResponse.setUsername(todoItem.getTaskUser().getUsername());
+            userResponse.setEmail(todoItem.getTaskUser().getEmail());
+            todoItemResponse.setUser(userResponse);
+        }
+
+        // Map Project to ProjectResponse
+        if (todoItem.getProject() != null) {
+            ProjectResponse projectResponse = new ProjectResponse();
+            projectResponse.setId(todoItem.getProject().getId());
+            projectResponse.setName(todoItem.getProject().getName());
+            projectResponse.setDescription(todoItem.getProject().getDescription());
+
+            // Ensure the todoItems list is not null before streaming
+            List<TodoItemResponse> todoItemResponses = (todoItem.getProject().getTodoItems() != null ?
+                    todoItem.getProject().getTodoItems() : new ArrayList<>()) // Use an empty list if null
+                    .stream()
+                    .map(todo -> {
+                        TodoItemResponse todoItemResp = new TodoItemResponse();
+                        if (todo instanceof TodoItem) {  // Ensure it's of type TodoItem
+                            TodoItem t = (TodoItem) todo;  // Cast to TodoItem explicitly
+                            todoItemResp.setId(t.getId());
+                            todoItemResp.setDescription(t.getDescription());
+                            todoItemResp.setComplete(t.getComplete());
+                            todoItemResp.setDueBy(t.getDueBy());
+                            todoItemResp.setStatus(t.getStatus());
+                        }
+                        return todoItemResp;
+                    })
+                    .collect(Collectors.toList());
+
+            projectResponse.setTodoItems(todoItemResponses);
+            todoItemResponse.setProject(projectResponse);
         }
 
         return todoItemResponse;
     }
 
-    public TodoItem convertDtoToTodoItem(TodoItemCreationRequest todoItemCreationRequest) {
+
+    public TodoItem convertRequestToTodoItem(TodoItemCreationRequest todoItemCreationRequest) {
         TodoItem todoItem = new TodoItem();
         todoItem.setDescription(todoItemCreationRequest.getDescription());
         todoItem.setDueBy(todoItemCreationRequest.getDueBy());
 
+        // Mapping TaskUser to TodoItem
         TaskUser taskUser = taskUserRepository.findById(todoItemCreationRequest.getUser())
                 .orElseThrow(() -> new TaskUserNotFoundException("User not found with id " + todoItemCreationRequest.getUser()));
 
         todoItem.setTaskUser(taskUser);
+
+        // Mapping Project to TodoItem
+        if (todoItemCreationRequest.getProject() != null) {
+            Project project = projectRepository.findById(todoItemCreationRequest.getProject())
+                    .orElseThrow(() -> new ProjectNotFoundException("Project not found with id " + todoItemCreationRequest.getProject()));
+            todoItem.setProject(project);
+        }
 
         return todoItem;
     }
@@ -115,14 +175,34 @@ public class TodoItemService {
         todoItem.setComplete(todoItemResponse.getComplete());
         todoItem.setStatus(todoItemResponse.getStatus());
         
-        TaskUser taskUser = taskUserRepository.findById(todoItemResponse.getUser())
+        TaskUser taskUser = taskUserRepository.findById(todoItemResponse.getUser().getId())
                 .orElseThrow(() -> new TaskUserNotFoundException("User not found with id " + todoItemResponse.getUser()));
-
 
         todoItem.setTaskUser(taskUser);
         
         return todoItem;
     }
+    
+    public TodoItemCreationRequest convertResponseToTodoItemRequest(TodoItemResponse todoItemResponse) {
+        TodoItemCreationRequest todoItemCreationRequest = new TodoItemCreationRequest();
+
+        // Mapping fields from TodoItemResponse to TodoItemCreationRequest
+        todoItemCreationRequest.setDescription(todoItemResponse.getDescription());
+        todoItemCreationRequest.setDueBy(todoItemResponse.getDueBy());
+
+        // Mapping TaskUser (if needed)
+        if (todoItemResponse.getUser() != null) {
+            todoItemCreationRequest.setUser(todoItemResponse.getUser().getId());
+        }
+
+        // Assuming project is optional, if it exists in the response, map it
+        if (todoItemResponse.getProject() != null) {
+            todoItemCreationRequest.setProject(todoItemResponse.getProject().getId());
+        }
+
+        return todoItemCreationRequest;
+    }
+
 
    
 }

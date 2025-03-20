@@ -9,6 +9,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
+import com.taskmanager.app.project.Project;
 import com.taskmanager.app.user.TaskUser;
 
 import jakarta.persistence.Column;
@@ -66,6 +67,11 @@ public class TodoItem {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private TaskUser taskUser;
+    
+    @ManyToOne
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
+
     
     @Override
     public String toString() {

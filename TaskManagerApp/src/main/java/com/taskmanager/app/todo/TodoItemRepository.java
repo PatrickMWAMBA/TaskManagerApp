@@ -9,6 +9,9 @@ import org.springframework.stereotype.Repository;
 public interface TodoItemRepository extends JpaRepository<TodoItem, Long> {
 	
     List<TodoItem> getAllTasksByTaskUserId(Long userId);
+    
+    List<TodoItem> findByProjectId(Long projectId);  // Add this method to get tasks by project
+
 
 
 }

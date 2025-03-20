@@ -27,7 +27,9 @@ public class TodoItemCreationRequest {
 	@NotNull
 	private LocalDateTime dueBy;
 	
-    private Long User;
+    private Long user;
+    
+    private Long project;
 
 	
 	

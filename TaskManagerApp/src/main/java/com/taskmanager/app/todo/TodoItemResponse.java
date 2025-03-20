@@ -9,6 +9,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.taskmanager.app.config.CustomOffsetDateTimeDeserializer;
+import com.taskmanager.app.project.ProjectResponse;
+import com.taskmanager.app.user.UserCreationResponse;
 
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotNull;
@@ -33,8 +35,9 @@ public class TodoItemResponse {
     @NotNull
     private TodoStatus status; // Add status field
     
-    private Long user;
+    private UserCreationResponse user;
     
+    private ProjectResponse project;
 
 	
 }
