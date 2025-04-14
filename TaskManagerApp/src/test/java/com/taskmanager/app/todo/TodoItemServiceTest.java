@@ -3,6 +3,7 @@ package com.taskmanager.app.todo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.taskmanager.app.BaseIT;
 import com.taskmanager.app.project.Project;
 import com.taskmanager.app.project.ProjectRepository;
 import com.taskmanager.app.user.TaskUser;
@@ -20,7 +21,7 @@ import java.util.List;
 
 @SpringBootTest
 @Transactional
-class TodoItemServiceTest {
+class TodoItemServiceTest extends BaseIT {
 
     @Autowired
     private TodoItemService underTest;

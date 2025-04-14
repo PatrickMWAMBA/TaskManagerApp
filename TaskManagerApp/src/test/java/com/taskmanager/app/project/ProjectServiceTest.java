@@ -3,6 +3,7 @@ package com.taskmanager.app.project;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.taskmanager.app.BaseIT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,7 @@ import java.util.List;
 
 @SpringBootTest
 @Transactional
-class ProjectServiceTest {
+class ProjectServiceTest extends BaseIT {
 
     @Autowired
     private ProjectService underTest;
