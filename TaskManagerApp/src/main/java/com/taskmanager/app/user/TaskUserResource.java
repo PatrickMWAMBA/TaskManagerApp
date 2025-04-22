@@ -4,6 +4,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 import java.util.List;
 
 @CrossOrigin(origins = "http://localhost:3000")
@@ -29,6 +31,7 @@ public class TaskUserResource {
         return new ResponseEntity<>(userResponses, HttpStatus.OK);
     }
 
+    @ApiResponse(responseCode = "201")
     @PostMapping
     public ResponseEntity<UserCreationResponse> createUser(@RequestBody UserCreationRequest userRequest) {
         UserCreationResponse createdUser = taskUserService.create(userRequest);
