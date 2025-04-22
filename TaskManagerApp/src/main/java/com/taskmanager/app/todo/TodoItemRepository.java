@@ -13,7 +13,7 @@ public interface TodoItemRepository extends JpaRepository<TodoItem, Long> {
     
     List<TodoItem> findByProjectId(Long projectId);  // Add this method to get tasks by project
 
-    List<TodoItem> findByDueDateBetween(LocalDateTime start, LocalDateTime end);
+    List<TodoItem> findByDueByBetween(LocalDateTime start, LocalDateTime end);
 
 
 
