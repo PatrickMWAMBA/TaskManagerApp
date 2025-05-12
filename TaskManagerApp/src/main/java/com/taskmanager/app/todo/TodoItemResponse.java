@@ -22,6 +22,9 @@ import lombok.Setter;
 public class TodoItemResponse {
 	
     private Long id;
+    
+	@NotNull
+	private String taskName;
 		
 	@NotNull
 	private String description;

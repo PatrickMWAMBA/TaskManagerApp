@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.stereotype.Service;
 
+import com.taskmanager.app.email.EmailService;
 import com.taskmanager.app.project.Project;
 import com.taskmanager.app.project.ProjectNotFoundException;
 import com.taskmanager.app.project.ProjectRepository;
@@ -22,11 +23,13 @@ public class TodoItemService {
     private final TodoItemRepository todoItemRepository;
     private final TaskUserRepository taskUserRepository;
     private final ProjectRepository projectRepository;
+    private final EmailService emailService;
     
-    public TodoItemService(TodoItemRepository todoItemRepository, TaskUserRepository taskUserRepository, ProjectRepository projectRepository) {
+    public TodoItemService(TodoItemRepository todoItemRepository, TaskUserRepository taskUserRepository, ProjectRepository projectRepository, EmailService emailService) {
         this.todoItemRepository = todoItemRepository;
 		this.taskUserRepository = taskUserRepository;
 		this.projectRepository = projectRepository;
+		this.emailService = emailService;
     }
 
     public TodoItemResponse get(Long todoItemId) {
@@ -39,6 +42,15 @@ public class TodoItemService {
         TodoItem todoItem = convertRequestToTodoItem(todoItemCreationRequest);
         System.out.println("Saving TodoItem: " + todoItem); // Log before saving
         TodoItem todoItemSaved = todoItemRepository.save(todoItem);
+
+        // Send email if an assignee is present
+        if (todoItemSaved.getTaskUser() != null && todoItemSaved.getTaskUser().getEmail() != null) {
+            String toEmail = todoItemSaved.getTaskUser().getEmail();
+            String taskName = todoItemSaved.getTaskName();
+
+            emailService.sendTaskAssignmentEmail(toEmail, taskName);
+        }
+
         return convertTodoItemToResponse(todoItemSaved);
     }
 
@@ -98,6 +110,7 @@ public class TodoItemService {
         TodoItemResponse todoItemResponse = new TodoItemResponse();
 
         todoItemResponse.setId(todoItem.getId());
+        todoItemResponse.setTaskName(todoItem.getTaskName());
         todoItemResponse.setDescription(todoItem.getDescription());
         todoItemResponse.setComplete(todoItem.getComplete());
         todoItemResponse.setDueBy(todoItem.getDueBy());
@@ -128,6 +141,7 @@ public class TodoItemService {
                         if (todo instanceof TodoItem) {  // Ensure it's of type TodoItem
                             TodoItem t = (TodoItem) todo;  // Cast to TodoItem explicitly
                             todoItemResp.setId(t.getId());
+                            todoItemResp.setTaskName(t.getTaskName());
                             todoItemResp.setDescription(t.getDescription());
                             todoItemResp.setComplete(t.getComplete());
                             todoItemResp.setDueBy(t.getDueBy());
@@ -149,6 +163,7 @@ public class TodoItemService {
         TodoItem todoItem = new TodoItem();
         todoItem.setDescription(todoItemCreationRequest.getDescription());
         todoItem.setDueBy(todoItemCreationRequest.getDueBy());
+        todoItem.setTaskName(todoItemCreationRequest.getTaskName());
 
         // Mapping TaskUser to TodoItem
         TaskUser taskUser = taskUserRepository.findById(todoItemCreationRequest.getUser())
@@ -174,6 +189,7 @@ public class TodoItemService {
         todoItem.setDueBy(todoItemResponse.getDueBy());
         todoItem.setComplete(todoItemResponse.getComplete());
         todoItem.setStatus(todoItemResponse.getStatus());
+        todoItem.setTaskName(todoItemResponse.getTaskName());
         
         TaskUser taskUser = taskUserRepository.findById(todoItemResponse.getUser().getId())
                 .orElseThrow(() -> new TaskUserNotFoundException("User not found with id " + todoItemResponse.getUser()));

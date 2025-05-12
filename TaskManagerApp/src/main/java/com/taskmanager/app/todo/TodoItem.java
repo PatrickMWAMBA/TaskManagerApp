@@ -41,6 +41,9 @@ public class TodoItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    @Column(nullable = false)
+	private String taskName;
 
     @Column(nullable = false)
     private String description;

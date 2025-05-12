@@ -20,7 +20,10 @@ import lombok.Setter;
 @Setter
 @Getter
 public class TodoItemCreationRequest {
-		
+	
+	@NotNull
+	private String taskName;
+			
 	@NotNull
 	private String description;
 	
