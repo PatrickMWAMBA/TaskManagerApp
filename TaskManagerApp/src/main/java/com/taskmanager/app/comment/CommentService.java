@@ -46,7 +46,7 @@ public class CommentService {
     // READ BY UID
     public CommentResponse getCommentByUid(UUID commentUid) {
         Comment comment = commentRepository.findByCommentUid(commentUid)
-                .orElseThrow(()-> new CommentNotFoundException("Cooment not found with UID "+commentUid));
+                .orElseThrow(()-> new CommentNotFoundException("Comment not found with UID "+commentUid));
         return convertEntityToResponse(comment);
     }
 
@@ -74,7 +74,7 @@ public class CommentService {
     // UPDATE
     public CommentResponse updateComment(UUID commentUid, CommentResponse commentResponse) {
         Comment existingComment = commentRepository.findByCommentUid(commentUid)
-                .orElseThrow(()-> new CommentNotFoundException("Cooment not found with UID "+commentUid));
+                .orElseThrow(()-> new CommentNotFoundException("Comment not found with UID "+commentUid));
 
         TodoItem todoItem = todoItemRepository.findByTodoUid(commentResponse.getTodoItem().getTodoUid())
                 .orElseThrow(() -> new TodoItemNotFoundException("TodoItem not found with Uid: " + commentResponse.getTodoItem().getTodoUid()));
@@ -93,7 +93,7 @@ public class CommentService {
     // DELETE
     public void deleteComment(UUID commentUid) {
         Comment comment = commentRepository.findByCommentUid(commentUid)
-                .orElseThrow(()-> new CommentNotFoundException("Cooment not found with UID "+commentUid));
+                .orElseThrow(()-> new CommentNotFoundException("Comment not found with UID "+commentUid));
         commentRepository.delete(comment);
     }
 

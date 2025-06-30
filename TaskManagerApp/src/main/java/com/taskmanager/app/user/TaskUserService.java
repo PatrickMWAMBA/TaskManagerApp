@@ -56,10 +56,10 @@ public class TaskUserService {
 	public UserCreationResponse update(Long userId, UserCreationResponse userCreationResponse) {
 		System.out.println("🔍 Checking user existence for ID: " + userId);
 
-		TaskUser taskUser = taskUserRepository.findById(userId).orElseThrow(() -> {
-			System.out.println("❌ User NOT FOUND with ID: " + userId);
-			return new TodoItemNotFoundException("User not found with id " + userId);
-		});
+                TaskUser taskUser = taskUserRepository.findById(userId).orElseThrow(() -> {
+                        System.out.println("❌ User NOT FOUND with ID: " + userId);
+                        return new TaskUserNotFoundException("User not found with id " + userId);
+                });
 
 		System.out.println("✅ User found: " + taskUser.getUsername());
 
