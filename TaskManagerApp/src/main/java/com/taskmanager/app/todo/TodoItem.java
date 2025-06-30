@@ -48,7 +48,7 @@ public class TodoItem {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, unique = true, columnDefinition = "uniqueidentifier", name = "uid")
+  @Column(nullable = false, unique = true, name = "uid")
   private UUID todoUid;
 
   @Column(nullable = false)
