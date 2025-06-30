@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         classes = TaskManagerAppApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-@ActiveProfiles("it")
+@ActiveProfiles("test")
 public abstract class BaseIT {
 
     @Container
