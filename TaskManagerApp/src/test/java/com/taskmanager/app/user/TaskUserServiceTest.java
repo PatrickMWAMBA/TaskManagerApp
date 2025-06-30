@@ -42,7 +42,7 @@ class TaskUserServiceTest extends BaseIT {
 
         // Then
         UserCreationResponse retrieved = underTest.get(created.getId());
-        assertThat(retrieved.getUsername()).isEqualTo("TestUser");
+        assertThat(retrieved.getName()).isEqualTo("TestUser");
         assertThat(retrieved.getRoles()).containsExactlyInAnyOrder(1L, 2L); // Verify roles
     }
 
@@ -86,7 +86,7 @@ class TaskUserServiceTest extends BaseIT {
 
         UserCreationResponse updateRequest = new UserCreationResponse();
         updateRequest.setId(created.getId());
-        updateRequest.setUsername("UpdatedUser");
+        updateRequest.setName("UpdatedUser");
         updateRequest.setEmail("updated@example.com");
         updateRequest.setRoles(List.of(1L,2L)); // Update roles
 
@@ -94,7 +94,7 @@ class TaskUserServiceTest extends BaseIT {
         UserCreationResponse updated = underTest.update(created.getId(), updateRequest);
 
         // Then
-        assertThat(updated.getUsername()).isEqualTo("UpdatedUser");
+        assertThat(updated.getName()).isEqualTo("UpdatedUser");
         assertThat(updated.getEmail()).isEqualTo("updated@example.com");
         assertThat(updated.getRoles()).containsExactlyInAnyOrder(1L,2L); // Verify updated roles
     }
@@ -202,7 +202,7 @@ class TaskUserServiceTest extends BaseIT {
         // Then
         assertThat(retrieved).isNotNull();
         assertThat(retrieved.getEmail()).isEqualTo("emailuser@example.com");
-        assertThat(retrieved.getUsername()).isEqualTo("EmailUser");
+        assertThat(retrieved.getName()).isEqualTo("EmailUser");
     }
 
 

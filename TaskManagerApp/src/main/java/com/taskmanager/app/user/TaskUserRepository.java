@@ -19,6 +19,12 @@ public interface TaskUserRepository extends JpaRepository<TaskUser, Long> {
     TaskUser findByEmailIgnoreCase(String email);
 
 	boolean existsByEmailIgnoreCase(String email);
+	
+    Optional<TaskUser> findByUserUid(UUID uid);
+    
+    boolean existsByUserUid(UUID userUid);
+
+
 
 
 

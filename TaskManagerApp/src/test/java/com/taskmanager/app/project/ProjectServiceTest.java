@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.taskmanager.app.BaseIT;
 
 import java.util.List;
+import java.util.UUID;
 
 @SpringBootTest
 @Transactional
@@ -39,7 +40,7 @@ class ProjectServiceTest extends BaseIT {
         ProjectResponse created = underTest.createProject(request);
 
         // Then
-        ProjectResponse retrieved = underTest.getProjectById(created.getId());
+        ProjectResponse retrieved = underTest.getProjectByUid(created.getProjectUid());
         assertThat(retrieved.getName()).isEqualTo("Test Project");
         assertThat(retrieved.getDescription()).isEqualTo("A sample project");
     }
@@ -76,12 +77,12 @@ class ProjectServiceTest extends BaseIT {
         ProjectResponse created = underTest.createProject(request);
 
         ProjectResponse updateRequest = new ProjectResponse();
-        updateRequest.setId(created.getId());
+        updateRequest.setProjectUid(created.getProjectUid());
         updateRequest.setName("Updated Project");
         updateRequest.setDescription("Updated Description");
 
         // When
-        ProjectResponse updated = underTest.updateProject(created.getId(), updateRequest);
+        ProjectResponse updated = underTest.updateProject(created.getProjectUid(), updateRequest);
 
         // Then
         assertThat(updated.getName()).isEqualTo("Updated Project");
@@ -98,11 +99,11 @@ class ProjectServiceTest extends BaseIT {
         ProjectResponse created = underTest.createProject(request);
 
         // When
-        underTest.deleteProject(created.getId());
+        underTest.deleteProject(created.getProjectUid());
 
         // Then
-        assertThatThrownBy(() -> underTest.getProjectById(created.getId()))
-                .isInstanceOf(ProjectNotFoundException.class)
-                .hasMessageContaining("Project not found with id");
+        assertThatThrownBy(() -> underTest.getProjectByUid(created.getProjectUid()))
+            .isInstanceOf(ProjectNotFoundException.class)
+            .hasMessageContaining("Project not found with uid");
     }
 }

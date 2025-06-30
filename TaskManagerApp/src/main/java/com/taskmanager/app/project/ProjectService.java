@@ -3,12 +3,14 @@ package com.taskmanager.app.project;
 import com.taskmanager.app.todo.TodoItem;
 import com.taskmanager.app.todo.TodoItemResponse;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 public class ProjectService {
-    
+
     private final ProjectRepository projectRepository;
 
     public ProjectService(ProjectRepository projectRepository) {
@@ -22,10 +24,10 @@ public class ProjectService {
         return convertProjectEntityToResponse(savedProject);
     }
 
-    // Get a project by ID
-    public ProjectResponse getProjectById(Long projectId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException("Project not found with ID: " + projectId));
+    // Get a project by UUID
+    public ProjectResponse getProjectByUid(UUID projectUid) {
+        Project project = projectRepository.findByProjectUid(projectUid)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found with UID: " + projectUid));
         return convertProjectEntityToResponse(project);
     }
 
@@ -36,16 +38,14 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
-    // **Update a project using ProjectResponse**
-    public ProjectResponse updateProject(Long projectId, ProjectResponse updatedResponse) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException("Project not found with ID: " + projectId));
+    // Update a project using its UID
+    public ProjectResponse updateProject(UUID projectUid, ProjectResponse updatedResponse) {
+        Project project = projectRepository.findByProjectUid(projectUid)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found with UID: " + projectUid));
 
-        // Update fields
         project.setName(updatedResponse.getName());
         project.setDescription(updatedResponse.getDescription());
 
-        // Convert TodoItemResponses to TodoItems and update
         if (updatedResponse.getTodoItems() != null) {
             List<TodoItem> todoItems = updatedResponse.getTodoItems().stream()
                     .map(this::convertTodoResponseToEntity)
@@ -57,16 +57,15 @@ public class ProjectService {
         return convertProjectEntityToResponse(updatedProject);
     }
 
-    // Delete a project
-    public void deleteProject(Long projectId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new ProjectNotFoundException("Project not found with ID: " + projectId);
-        }
-        projectRepository.deleteById(projectId);
+    // Delete a project by UID
+    public void deleteProject(UUID projectUid) {
+        Project project = projectRepository.findByProjectUid(projectUid)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found with UID: " + projectUid));
+        projectRepository.delete(project);
     }
 
     // Convert ProjectCreationRequest to Project entity
-    private Project convertRequestToEntity(ProjectCreationRequest projectCreationRequest) {
+    public Project convertRequestToEntity(ProjectCreationRequest projectCreationRequest) {
         Project project = new Project();
         project.setName(projectCreationRequest.getName());
         project.setDescription(projectCreationRequest.getDescription());
@@ -74,9 +73,9 @@ public class ProjectService {
     }
 
     // Convert Project entity to ProjectResponse
-    private ProjectResponse convertProjectEntityToResponse(Project project) {
+    public ProjectResponse convertProjectEntityToResponse(Project project) {
         ProjectResponse projectResponse = new ProjectResponse();
-        projectResponse.setId(project.getId());
+        projectResponse.setProjectUid(project.getProjectUid());
         projectResponse.setName(project.getName());
         projectResponse.setDescription(project.getDescription());
 
@@ -91,9 +90,9 @@ public class ProjectService {
     }
 
     // Convert TodoItemResponse to TodoItem entity
-    private TodoItem convertTodoResponseToEntity(TodoItemResponse todoResponse) {
+    public TodoItem convertTodoResponseToEntity(TodoItemResponse todoResponse) {
         TodoItem todoItem = new TodoItem();
-        todoItem.setId(todoResponse.getId());
+        todoItem.setTodoUid(todoResponse.getTodoUid());
         todoItem.setDescription(todoResponse.getDescription());
         todoItem.setDueBy(todoResponse.getDueBy());
         todoItem.setComplete(todoResponse.getComplete());
@@ -102,9 +101,9 @@ public class ProjectService {
     }
 
     // Convert TodoItem entity to TodoItemResponse
-    private TodoItemResponse convertTodoEntityToResponse(TodoItem todoItem) {
+    public TodoItemResponse convertTodoEntityToResponse(TodoItem todoItem) {
         TodoItemResponse todoResponse = new TodoItemResponse();
-        todoResponse.setId(todoItem.getId());
+        todoResponse.setTodoUid(todoItem.getTodoUid());
         todoResponse.setDescription(todoItem.getDescription());
         todoResponse.setDueBy(todoItem.getDueBy());
         todoResponse.setComplete(todoItem.getComplete());

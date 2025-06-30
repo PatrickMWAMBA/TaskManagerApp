@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -32,6 +33,8 @@ public class TaskUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    private UUID userUid;
 
     @NotBlank
     @Size(min = 3, max = 50)
@@ -56,7 +59,7 @@ public class TaskUser {
     @Column(nullable = false, name = "date_updated")
     private OffsetDateTime updatedAt;
 
-    @OneToMany(mappedBy = "taskUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TodoItem> todoItems = new ArrayList<>();
     
     @ManyToMany

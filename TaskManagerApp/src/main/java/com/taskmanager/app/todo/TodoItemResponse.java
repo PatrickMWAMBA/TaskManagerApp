@@ -1,18 +1,13 @@
 package com.taskmanager.app.todo;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
 
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.taskmanager.app.config.CustomOffsetDateTimeDeserializer;
+import com.taskmanager.app.comment.CommentResponse;
 import com.taskmanager.app.project.ProjectResponse;
 import com.taskmanager.app.user.UserCreationResponse;
 
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,27 +15,28 @@ import lombok.Setter;
 @Setter
 @Getter
 public class TodoItemResponse {
-	
-    private Long id;
-    
-	@NotNull
-	private String taskName;
-		
-	@NotNull
-	private String description;
-	
-	@NotNull
-	private LocalDateTime dueBy;
-	
-	@NotNull
-	private Boolean complete;
-	
-    @NotNull
-    private TodoStatus status; // Add status field
-    
-    private UserCreationResponse user;
-    
-    private ProjectResponse project;
 
-	
+  private UUID todoUid;
+
+  private String taskName;
+
+  private String description;
+
+  private LocalDateTime dueBy;
+
+  private LocalDateTime startDate;
+
+  private Boolean complete;
+
+  private TodoStatus status;
+
+  private PriorityLevel priority;
+
+  private UserCreationResponse user;
+
+  private ProjectResponse project;
+
+  private List<CommentResponse> comments;
+
+  private int totalComments;
 }

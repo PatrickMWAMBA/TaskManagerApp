@@ -8,209 +8,227 @@ import com.taskmanager.app.project.Project;
 import com.taskmanager.app.project.ProjectRepository;
 import com.taskmanager.app.user.TaskUser;
 import com.taskmanager.app.user.TaskUserRepository;
-import com.taskmanager.app.user.UserCreationResponse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @SpringBootTest
-@Transactional
+@ActiveProfiles("test")
 class TodoItemServiceTest extends BaseIT {
 
-    @Autowired
-    private TodoItemService underTest;
+	@Autowired
+	private TodoItemService underTest;
 
-    @Autowired
-    private TaskUserRepository taskUserRepository;
-    
-    @Autowired
-    private ProjectRepository projectRepository;
-    
-    @Autowired
-    private TodoItemRepository todoItemRepository;
-    
-    @BeforeEach
-    void setUp() {
-        todoItemRepository.deleteAll();
-        taskUserRepository.deleteAll();
-    }
+	@Autowired
+	private TaskUserRepository taskUserRepository;
 
-    @Test
-    void shouldCreateAndRetrieveTodoItemWithProject() {
-        // Given
-        TaskUser taskUser = new TaskUser();
-        taskUser.setUsername("Test User");
-        taskUser.setEmail("test@example.com");
-        taskUser.setPassword("password");
-        taskUser = taskUserRepository.save(taskUser);
+	@Autowired
+	private ProjectRepository projectRepository;
 
-        // Create a Project
-        Project project = new Project();
-        project.setName("Test Project");
-        project.setDescription("Project Description");
-        project = projectRepository.save(project);
+	@Autowired
+	private TodoItemRepository todoItemRepository;
 
-        TodoItemCreationRequest request = new TodoItemCreationRequest();
-        request.setDescription("Test Todo Item");
-        request.setDueBy(LocalDateTime.now().plusDays(1));
-        request.setUser(taskUser.getId());
-        request.setProject(project.getId()); // Set the project association
+	@BeforeEach
+	@Transactional
+	void cleanDatabase() {
+	    // Touch the EntityManager to force schema creation
+	    todoItemRepository.findAll();
 
-        // When
-        TodoItemResponse created = underTest.create(request);
+	    todoItemRepository.deleteAllInBatch();
+	    projectRepository.deleteAllInBatch();
+	    taskUserRepository.deleteAllInBatch();
+	}
 
-        // Then
-        TodoItemResponse retrieved = underTest.get(created.getId());
-        assertThat(retrieved.getDescription()).isEqualTo("Test Todo Item");
-        assertThat(retrieved.getProject().getName()).isEqualTo("Test Project"); // Check the project association
-    }
+	@Test
+	void shouldCreateAndRetrieveTodoItemWithProject() {
+		// Given
+		TaskUser taskUser = new TaskUser();
+		taskUser.setUsername("Test User");
+		taskUser.setEmail("test@example.com");
+		taskUser.setPassword("password");
+		taskUser = taskUserRepository.save(taskUser);
 
-    @Test
-    void shouldReturnAllTodoItemsForProject() {
-        // Given
-        TaskUser taskUser = new TaskUser();
-        taskUser.setUsername("Test User");
-        taskUser.setEmail("test@example.com");
-        taskUser.setPassword("password");
-        taskUser = taskUserRepository.save(taskUser);
+		Project project = new Project();
+		project.setName("Test Project");
+		project.setDescription("Project Description");
+		project = projectRepository.save(project);
 
-        // Create a Project
-        Project project = new Project();
-        project.setName("Test Project");
-        project.setDescription("Project Description");
+		TodoItemCreationRequest request = new TodoItemCreationRequest();
+		request.setTaskName("Task Name");
+		request.setDescription("Test Todo Item");
+		request.setStartDate(LocalDateTime.now());
+		request.setDueBy(LocalDateTime.now().plusDays(1));
+		request.setUser(taskUser.getUserUid());
+		request.setProject(project.getProjectUid());
+		request.setPriority(PriorityLevel.HIGH);
 
-        project = projectRepository.save(project);
+		// When
+		TodoItemResponse created = underTest.create(request);
 
-        TodoItemCreationRequest request1 = new TodoItemCreationRequest();
-        request1.setDescription("Todo 1");
-        request1.setDueBy(LocalDateTime.now().plusDays(1));
-        request1.setUser(taskUser.getId());
-        request1.setProject(project.getId()); // Associate with the project
+		// Then
+		TodoItemResponse retrieved = underTest.getByUid(created.getTodoUid());
+		assertThat(retrieved.getDescription()).isEqualTo("Test Todo Item");
+		assertThat(retrieved.getProject().getName()).isEqualTo("Test Project");
+	}
 
-        TodoItemCreationRequest request2 = new TodoItemCreationRequest();
-        request2.setDescription("Todo 2");
-        request2.setDueBy(LocalDateTime.now().plusDays(2));
-        request2.setUser(taskUser.getId());
-        request2.setProject(project.getId());
+	@Test
+	void shouldReturnAllTodoItemsForProject() {
+		// Given
+		TaskUser user = new TaskUser();
+		user.setUsername("Test User");
+		user.setEmail("test@example.com");
+		user.setPassword("password");
+		user = taskUserRepository.save(user);
 
-        underTest.create(request1);
-        underTest.create(request2);
+		Project project = new Project();
+		project.setName("Test Project");
+		project.setDescription("Project Description");
+		project = projectRepository.save(project);
 
-        // When
-        List<TodoItemResponse> allTodos = underTest.getAllTasksForProject(project.getId()); // This is the new method name
+		TodoItemCreationRequest request1 = new TodoItemCreationRequest();
+		request1.setTaskName("Task 1");
+		request1.setDescription("Todo 1");
+		request1.setStartDate(LocalDateTime.now());
+		request1.setDueBy(LocalDateTime.now().plusDays(1));
+		request1.setUser(user.getUserUid());
+		request1.setProject(project.getProjectUid());
 
-        // Then
-        assertThat(allTodos).hasSize(2);
-        assertThat(allTodos).extracting("description").contains("Todo 1", "Todo 2");
-    }
+		TodoItemCreationRequest request2 = new TodoItemCreationRequest();
+		request2.setTaskName("Task 2");
+		request2.setDescription("Todo 2");
+		request2.setStartDate(LocalDateTime.now());
+		request2.setDueBy(LocalDateTime.now().plusDays(2));
+		request2.setUser(user.getUserUid());
+		request2.setProject(project.getProjectUid());
 
-    @Test
-    void shouldReturnAllTasksForUser() {
-        // Given
-        TaskUser taskUser = new TaskUser();
-        taskUser.setUsername("Test User");
-        taskUser.setEmail("test@example.com");
-        taskUser.setPassword("password");
-        taskUser = taskUserRepository.save(taskUser);
+		underTest.create(request1);
+		underTest.create(request2);
 
-        Project project = new Project();
-        project.setName("Test Project");
-        project.setDescription("Project Description");
-        project = projectRepository.save(project);
+		// When
+		List<TodoItemResponse> allTodos = underTest.getAllTasksForProject(project.getProjectUid());
 
-        TodoItemCreationRequest request1 = new TodoItemCreationRequest();
-        request1.setDescription("Todo 1");
-        request1.setDueBy(LocalDateTime.now().plusDays(1));
-        request1.setUser(taskUser.getId());
-        request1.setProject(project.getId());
+		// Then
+		assertThat(allTodos).hasSize(2);
+		assertThat(allTodos).extracting("description").contains("Todo 1", "Todo 2");
+	}
 
-        TodoItemCreationRequest request2 = new TodoItemCreationRequest();
-        request2.setDescription("Todo 2");
-        request2.setDueBy(LocalDateTime.now().plusDays(2));
-        request2.setUser(taskUser.getId());
-        request2.setProject(project.getId());
+	@Test
+	void shouldReturnAllTasksForUser() {
+		// Given
+		TaskUser user = new TaskUser();
+		user.setUsername("Test User");
+		user.setEmail("test@example.com");
+		user.setPassword("password");
+		user = taskUserRepository.save(user);
 
-        underTest.create(request1);
-        underTest.create(request2);
+		Project project = new Project();
+		project.setName("Test Project");
+		project.setDescription("Project Description");
+		project = projectRepository.save(project);
 
-        // When
-        List<TodoItemResponse> allTasksForUser = underTest.getAllTasksByUserId(taskUser.getId()); // Get all tasks for user
+		TodoItemCreationRequest request1 = new TodoItemCreationRequest();
+		request1.setTaskName("Task 1");
+		request1.setDescription("Todo 1");
+		request1.setStartDate(LocalDateTime.now());
+		request1.setDueBy(LocalDateTime.now().plusDays(1));
+		request1.setUser(user.getUserUid());
+		request1.setProject(project.getProjectUid());
 
-        // Then
-        assertThat(allTasksForUser).hasSize(2);
-        assertThat(allTasksForUser).extracting("description").contains("Todo 1", "Todo 2");
-    }
+		TodoItemCreationRequest request2 = new TodoItemCreationRequest();
+		request2.setTaskName("Task 2");
+		request2.setDescription("Todo 2");
+		request2.setStartDate(LocalDateTime.now());
+		request2.setDueBy(LocalDateTime.now().plusDays(2));
+		request2.setUser(user.getUserUid());
+		request2.setProject(project.getProjectUid());
 
-    @Test
-    void shouldUpdateTodoItem() {
-        // Given
-        TaskUser taskUser = new TaskUser();
-        taskUser.setUsername("Test User");
-        taskUser.setEmail("test@example.com");
-        taskUser.setPassword("password");
-        taskUser = taskUserRepository.save(taskUser);
+		underTest.create(request1);
+		underTest.create(request2);
 
-        Project project = new Project();
-        project.setName("Test Project");
-        project.setDescription("Project Description");
-        project = projectRepository.save(project);
+		// When
+		List<TodoItemResponse> allTasksForUser = underTest.getAllTasksByUserUid(user.getUserUid());
 
-        TodoItemCreationRequest request = new TodoItemCreationRequest();
-        request.setDescription("Todo 1");
-        request.setDueBy(LocalDateTime.now().plusDays(1));
-        request.setUser(taskUser.getId());
-        request.setProject(project.getId());
+		// Then
+		assertThat(allTasksForUser).hasSize(2);
+		assertThat(allTasksForUser).extracting("description").contains("Todo 1", "Todo 2");
+	}
 
-        TodoItemResponse createdTodoItem = underTest.create(request);
+	@Test
+	void shouldUpdateTodoItem() {
+		// Given
+		TaskUser user = new TaskUser();
+		user.setUsername("Test User");
+		user.setEmail("test@example.com");
+		user.setPassword("password");
+		user = taskUserRepository.save(user);
 
-        // When updating the todo item
-        createdTodoItem.setDescription("Updated Todo");
-        createdTodoItem.setComplete(true);
-        createdTodoItem.setDueBy(LocalDateTime.now().plusDays(3));
-        createdTodoItem.setStatus(TodoStatus.COMPLETE);
+		Project project = new Project();
+		project.setName("Test Project");
+		project.setDescription("Project Description");
+		project = projectRepository.save(project);
 
-        TodoItemResponse updatedTodoItem = underTest.update(createdTodoItem.getId(), createdTodoItem);
+		TodoItemCreationRequest request = new TodoItemCreationRequest();
+		request.setTaskName("Initial Task");
+		request.setDescription("Todo 1");
+		request.setStartDate(LocalDateTime.now());
+		request.setDueBy(LocalDateTime.now().plusDays(1));
+		request.setUser(user.getUserUid());
+		request.setProject(project.getProjectUid());
 
-        // Then
-        assertThat(updatedTodoItem.getDescription()).isEqualTo("Updated Todo");
-        assertThat(updatedTodoItem.getComplete()).isTrue();
-        assertThat(updatedTodoItem.getStatus()).isEqualTo(TodoStatus.COMPLETE);
-    }
+		TodoItemResponse created = underTest.create(request);
 
-    @Test
-    void shouldDeleteTodoItem() {
-        // Given
-        TaskUser taskUser = new TaskUser();
-        taskUser.setUsername("Test User");
-        taskUser.setEmail("test@example.com");
-        taskUser.setPassword("password");
-        taskUser = taskUserRepository.save(taskUser);
+		// When
+		created.setDescription("Updated Todo");
+		created.setComplete(true);
+		created.setDueBy(LocalDateTime.now().plusDays(3));
+		created.setStatus(TodoStatus.COMPLETE);
 
-        Project project = new Project();
-        project.setName("Test Project");
-        project.setDescription("Project Description");
-        project = projectRepository.save(project);
+		TodoItemResponse updated = underTest.update(created.getTodoUid(), created);
 
-        TodoItemCreationRequest request = new TodoItemCreationRequest();
-        request.setDescription("Todo 1");
-        request.setDueBy(LocalDateTime.now().plusDays(1));
-        request.setUser(taskUser.getId());
-        request.setProject(project.getId());
+		// Then
+		assertThat(updated.getDescription()).isEqualTo("Updated Todo");
+		assertThat(updated.getComplete()).isTrue();
+		assertThat(updated.getStatus()).isEqualTo(TodoStatus.COMPLETE);
+	}
 
-        TodoItemResponse createdTodoItem = underTest.create(request);
+	@Test
+	void shouldDeleteTodoItem() {
+		// Given
+		TaskUser user = new TaskUser();
+		user.setUsername("Test User");
+		user.setEmail("test@example.com");
+		user.setPassword("password");
+		user = taskUserRepository.save(user);
 
-        // When
-        underTest.delete(createdTodoItem.getId());
+		Project project = new Project();
+		project.setName("Test Project");
+		project.setDescription("Project Description");
+		project = projectRepository.save(project);
 
-        // Then
-        assertThatThrownBy(() -> underTest.get(createdTodoItem.getId()))
-                .isInstanceOf(TodoItemNotFoundException.class)
-                .hasMessageContaining("Todo item not found with id");
-    }
+		TodoItemCreationRequest request = new TodoItemCreationRequest();
+		request.setTaskName("Task to Delete");
+		request.setDescription("Todo 1");
+		request.setStartDate(LocalDateTime.now());
+		request.setDueBy(LocalDateTime.now().plusDays(1));
+		request.setUser(user.getUserUid());
+		request.setProject(project.getProjectUid());
+
+		TodoItemResponse created = underTest.create(request);
+
+		// When
+		underTest.delete(created.getTodoUid());
+
+		// Then
+		assertThatThrownBy(() -> underTest.getByUid(created.getTodoUid())).isInstanceOf(TodoItemNotFoundException.class)
+				.hasMessageContaining("Todo item not found with Uid");
+	}
 }

@@ -1,12 +1,19 @@
 package com.taskmanager.app.project;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/projects")
+@Tag(name = "Project API", description = "Endpoints for managing projects")
 public class ProjectResource {
 
     private final ProjectService projectService;
@@ -15,38 +22,55 @@ public class ProjectResource {
         this.projectService = projectService;
     }
 
-    // Create a new project
+    @Operation(summary = "Create a new project")
+    @ApiResponse(responseCode = "200", description = "Project successfully created")
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@RequestBody ProjectCreationRequest projectCreationRequest) {
         ProjectResponse createdProject = projectService.createProject(projectCreationRequest);
         return ResponseEntity.ok(createdProject);
     }
 
-    // Get a project by ID
-    @GetMapping("/{projectId}")
-    public ResponseEntity<ProjectResponse> getProjectById(@PathVariable Long projectId) {
-        ProjectResponse projectResponse = projectService.getProjectById(projectId);
+    @Operation(summary = "Get a project by UID")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Project found"),
+        @ApiResponse(responseCode = "404", description = "Project not found")
+    })
+    @GetMapping("/{projectUid}")
+    public ResponseEntity<ProjectResponse> getProjectByUid(@PathVariable UUID projectUid) {
+        ProjectResponse projectResponse = projectService.getProjectByUid(projectUid);
         return ResponseEntity.ok(projectResponse);
     }
 
-    // Get all projects
+    @Operation(summary = "Get all projects")
+    @ApiResponse(responseCode = "200", description = "List of all projects returned")
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getAllProjects() {
         List<ProjectResponse> projects = projectService.getAllProjects();
         return ResponseEntity.ok(projects);
     }
 
-    // Update a project
-    @PutMapping("/{projectId}")
-    public ResponseEntity<ProjectResponse> updateProject(@PathVariable Long projectId, @RequestBody ProjectResponse updatedResponse) {
-        ProjectResponse updatedProject = projectService.updateProject(projectId, updatedResponse);
+    @Operation(summary = "Update a project by UID")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Project successfully updated"),
+        @ApiResponse(responseCode = "404", description = "Project not found")
+    })
+    @PutMapping("/{projectUid}")
+    public ResponseEntity<ProjectResponse> updateProject(
+            @PathVariable UUID projectUid,
+            @RequestBody ProjectResponse updatedResponse) {
+
+        ProjectResponse updatedProject = projectService.updateProject(projectUid, updatedResponse);
         return ResponseEntity.ok(updatedProject);
     }
 
-    // Delete a project
-    @DeleteMapping("/{projectId}")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long projectId) {
-        projectService.deleteProject(projectId);
+    @Operation(summary = "Delete a project by UID")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Project successfully deleted"),
+        @ApiResponse(responseCode = "404", description = "Project not found")
+    })
+    @DeleteMapping("/{projectUid}")
+    public ResponseEntity<Void> deleteProject(@PathVariable UUID projectUid) {
+        projectService.deleteProject(projectUid);
         return ResponseEntity.noContent().build();
     }
 }
