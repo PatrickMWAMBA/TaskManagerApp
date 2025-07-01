@@ -67,6 +67,7 @@ public class ProjectService {
     // Convert ProjectCreationRequest to Project entity
     public Project convertRequestToEntity(ProjectCreationRequest projectCreationRequest) {
         Project project = new Project();
+        project.setProjectUid(UUID.randomUUID());
         project.setName(projectCreationRequest.getName());
         project.setDescription(projectCreationRequest.getDescription());
         return project;

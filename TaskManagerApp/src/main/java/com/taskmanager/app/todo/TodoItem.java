@@ -12,6 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.taskmanager.app.comment.Comment;
 import com.taskmanager.app.project.Project;
 import com.taskmanager.app.user.TaskUser;
@@ -48,7 +49,7 @@ public class TodoItem {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, unique = true, columnDefinition = "uniqueidentifier", name = "uid")
+  @Column(nullable = false, unique = true, name = "uid")
   private UUID todoUid;
 
   @Column(nullable = false)
@@ -81,6 +82,7 @@ public class TodoItem {
   private LocalDateTime startDate;
 
   @ManyToOne
+  @JsonBackReference
   @JoinColumn(name = "user_id", nullable = false)
   private TaskUser user;
 
@@ -89,7 +91,7 @@ public class TodoItem {
   private Project project;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column(nullable = true)
   private PriorityLevel priority = PriorityLevel.MEDIUM;
 
   @OneToMany(mappedBy = "todoItem", cascade = CascadeType.ALL, orphanRemoval = true)

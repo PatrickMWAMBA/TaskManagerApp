@@ -23,6 +23,7 @@ import java.util.UUID;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Transactional
 class TodoItemServiceTest extends BaseIT {
 
 	@Autowired
@@ -58,6 +59,7 @@ class TodoItemServiceTest extends BaseIT {
 		taskUser = taskUserRepository.save(taskUser);
 
 		Project project = new Project();
+		project.setProjectUid(UUID.randomUUID());
 		project.setName("Test Project");
 		project.setDescription("Project Description");
 		project = projectRepository.save(project);
@@ -90,6 +92,7 @@ class TodoItemServiceTest extends BaseIT {
 		user = taskUserRepository.save(user);
 
 		Project project = new Project();
+		project.setProjectUid(UUID.randomUUID());
 		project.setName("Test Project");
 		project.setDescription("Project Description");
 		project = projectRepository.save(project);
@@ -131,6 +134,7 @@ class TodoItemServiceTest extends BaseIT {
 		user = taskUserRepository.save(user);
 
 		Project project = new Project();
+		project.setProjectUid(UUID.randomUUID());
 		project.setName("Test Project");
 		project.setDescription("Project Description");
 		project = projectRepository.save(project);
@@ -172,6 +176,7 @@ class TodoItemServiceTest extends BaseIT {
 		user = taskUserRepository.save(user);
 
 		Project project = new Project();
+		project.setProjectUid(UUID.randomUUID());
 		project.setName("Test Project");
 		project.setDescription("Project Description");
 		project = projectRepository.save(project);
@@ -210,6 +215,7 @@ class TodoItemServiceTest extends BaseIT {
 		user = taskUserRepository.save(user);
 
 		Project project = new Project();
+		project.setProjectUid(UUID.randomUUID());
 		project.setName("Test Project");
 		project.setDescription("Project Description");
 		project = projectRepository.save(project);

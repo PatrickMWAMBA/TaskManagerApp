@@ -10,6 +10,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.taskmanager.app.role.Role;
 import com.taskmanager.app.todo.TodoItem;
 
@@ -59,6 +60,7 @@ public class TaskUser {
     @Column(nullable = false, name = "date_updated")
     private OffsetDateTime updatedAt;
 
+    @JsonIgnore  // prevents recursion during JSON serialization
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TodoItem> todoItems = new ArrayList<>();
     

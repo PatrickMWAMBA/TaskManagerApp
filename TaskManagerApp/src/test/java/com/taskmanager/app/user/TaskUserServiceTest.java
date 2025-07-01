@@ -69,7 +69,7 @@ class TaskUserServiceTest extends BaseIT {
 
         // Then
         assertThat(allUsers).hasSize(2);
-        assertThat(allUsers).extracting("username").contains("User1", "User2");
+        assertThat(allUsers).extracting("name").contains("User1", "User2");
         assertThat(allUsers).flatExtracting("roles").contains(1L, 2L);
     }
 
@@ -149,7 +149,7 @@ class TaskUserServiceTest extends BaseIT {
 
         // Then
         assertThat(superAdmins).hasSize(2);
-        assertThat(superAdmins).extracting("username").containsExactlyInAnyOrder("SuperAdmin1", "SuperAdmin2");
+        assertThat(superAdmins).extracting("name").containsExactlyInAnyOrder("SuperAdmin1", "SuperAdmin2");
     }
 
     @Test
@@ -182,7 +182,7 @@ class TaskUserServiceTest extends BaseIT {
 
         // Then
         assertThat(admins).hasSize(2);
-        assertThat(admins).extracting("username").containsExactlyInAnyOrder("Admin1", "Admin2");
+        assertThat(admins).extracting("name").containsExactlyInAnyOrder("Admin1", "Admin2");
     }
     
     @Test

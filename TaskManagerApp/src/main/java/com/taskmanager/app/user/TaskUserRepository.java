@@ -20,7 +20,8 @@ public interface TaskUserRepository extends JpaRepository<TaskUser, Long> {
 
 	boolean existsByEmailIgnoreCase(String email);
 	
-    Optional<TaskUser> findByUserUid(UUID uid);
+	@EntityGraph(attributePaths = {"todoItems", "roles"})
+	Optional<TaskUser> findByUserUid(UUID userUid);
     
     boolean existsByUserUid(UUID userUid);
 

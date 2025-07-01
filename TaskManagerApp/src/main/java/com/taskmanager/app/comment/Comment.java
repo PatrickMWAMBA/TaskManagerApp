@@ -33,7 +33,7 @@ public class Comment {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, unique = true, columnDefinition = "uniqueidentifier", name = "uid")
+  @Column(nullable = false, unique = true, name = "uid")
   private UUID commentUid;
 
 

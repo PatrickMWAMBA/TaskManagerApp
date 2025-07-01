@@ -103,7 +103,7 @@ class ProjectServiceTest extends BaseIT {
 
         // Then
         assertThatThrownBy(() -> underTest.getProjectByUid(created.getProjectUid()))
-            .isInstanceOf(ProjectNotFoundException.class)
-            .hasMessageContaining("Project not found with uid");
+        .isInstanceOf(ProjectNotFoundException.class)
+        .hasMessageContaining("Project not found with UID");
     }
 }

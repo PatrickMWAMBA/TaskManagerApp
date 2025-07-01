@@ -56,10 +56,10 @@ public class TaskUserService {
 	public UserCreationResponse update(Long userId, UserCreationResponse userCreationResponse) {
 		System.out.println("🔍 Checking user existence for ID: " + userId);
 
-                TaskUser taskUser = taskUserRepository.findById(userId).orElseThrow(() -> {
-                        System.out.println("❌ User NOT FOUND with ID: " + userId);
-                        return new TaskUserNotFoundException("User not found with id " + userId);
-                });
+		TaskUser taskUser = taskUserRepository.findById(userId).orElseThrow(() -> {
+			System.out.println("❌ User NOT FOUND with ID: " + userId);
+			return new TaskUserNotFoundException("User not found with id " + userId);
+		});
 
 		System.out.println("✅ User found: " + taskUser.getUsername());
 
@@ -113,103 +113,90 @@ public class TaskUserService {
 
 	// Mapper functions below
 
+	@Transactional
 	public UserCreationResponse convertEntityToResponse(TaskUser taskUser) {
+	    if (taskUser == null) {
+	        throw new IllegalArgumentException("TaskUser cannot be null");
+	    }
+
+	    // Always fetch a fully initialized TaskUser using EntityGraph (eager load roles & todoItems)
+	    TaskUser fullUser = taskUserRepository.findByUserUid(taskUser.getUserUid())
+	            .orElseThrow(() -> new TaskUserNotFoundException("User not found with UID: " + taskUser.getUserUid()));
+
 	    UserCreationResponse userCreationResponse = new UserCreationResponse();
+	    userCreationResponse.setName(fullUser.getUsername());
+	    userCreationResponse.setEmail(fullUser.getEmail());
+	    userCreationResponse.setId(fullUser.getId());
+	    userCreationResponse.setUserUid(fullUser.getUserUid());
 
-	    userCreationResponse.setName(taskUser.getUsername());
-	    userCreationResponse.setEmail(taskUser.getEmail());
-	    userCreationResponse.setId(taskUser.getId());
-	    userCreationResponse.setUserUid(taskUser.getUserUid()); // assuming you want to include the UID too
-
-	    // Convert TodoItems to TodoItemResponses
-	    if (taskUser.getTodoItems() != null) {
-	        userCreationResponse.setTodoItems(taskUser.getTodoItems().stream().map(todoItem -> {
-	            TodoItemResponse todoItemResponse = todoItemService.convertTodoItemToResponse(todoItem);
-
-	            // If the TodoItem has a Project, convert it
-	            if (todoItem.getProject() != null) {
-	                ProjectResponse projectResponse = new ProjectResponse();
-	                projectResponse.setProjectUid(todoItem.getProject().getProjectUid());
-	                projectResponse.setName(todoItem.getProject().getName());
-	                projectResponse.setDescription(todoItem.getProject().getDescription());
-
-	                // Convert project.todoItems to TodoItemResponses
-	                if (todoItem.getProject().getTodoItems() != null) {
-	                    List<TodoItemResponse> projectTodoItems = todoItem.getProject().getTodoItems().stream()
-	                            .map(todoItemService::convertTodoItemToResponse)
-	                            .collect(Collectors.toList());
-
-	                    projectResponse.setTodoItems(projectTodoItems);
-	                }
-
-	                todoItemResponse.setProject(projectResponse);
-	            }
-
-	            return todoItemResponse;
-	        }).collect(Collectors.toList()));
+	    // Convert TodoItems to DTOs
+	    if (fullUser.getTodoItems() != null) {
+	        userCreationResponse.setTodoItems(
+	            fullUser.getTodoItems().stream()
+	                .map(todoItemService::convertTodoItemToResponse)
+	                .collect(Collectors.toList())
+	        );
 	    }
 
 	    // Convert roles
-	    if (taskUser.getRoles() != null) {
-	        List<Long> roleIds = taskUser.getRoles().stream()
+	    if (fullUser.getRoles() != null) {
+	        List<Long> roleIds = fullUser.getRoles().stream()
 	                .map(Role::getId)
 	                .collect(Collectors.toList());
-
 	        userCreationResponse.setRoles(roleIds);
 	    }
 
 	    return userCreationResponse;
 	}
 
-
 	public TaskUser convertResponseToEntity(UserCreationResponse userCreationResponse) {
-	    TaskUser taskUser = new TaskUser();
+		TaskUser taskUser = new TaskUser();
 
-	    taskUser.setUsername(userCreationResponse.getName());
-	    taskUser.setEmail(userCreationResponse.getEmail());
-	    taskUser.setId(userCreationResponse.getId());
+		taskUser.setUsername(userCreationResponse.getName());
+		taskUser.setEmail(userCreationResponse.getEmail());
+		taskUser.setId(userCreationResponse.getId());
 
-	    // Convert TodoItemResponses to TodoItems
-	    if (userCreationResponse.getTodoItems() != null) {
-	        List<TodoItem> todoItems = userCreationResponse.getTodoItems().stream().map(todoItemResponse -> {
-	            TodoItem todoItem = new TodoItem();
-	            todoItem.setDescription(todoItemResponse.getDescription());
-	            todoItem.setDueBy(todoItemResponse.getDueBy());
-	            todoItem.setComplete(todoItemResponse.getComplete());
-	            todoItem.setStatus(todoItemResponse.getStatus());
+		// Convert TodoItemResponses to TodoItems
+		if (userCreationResponse.getTodoItems() != null) {
+			List<TodoItem> todoItems = userCreationResponse.getTodoItems().stream().map(todoItemResponse -> {
+				TodoItem todoItem = new TodoItem();
+				todoItem.setDescription(todoItemResponse.getDescription());
+				todoItem.setDueBy(todoItemResponse.getDueBy());
+				todoItem.setComplete(todoItemResponse.getComplete());
+				todoItem.setStatus(todoItemResponse.getStatus());
 
-	            // Associate TaskUser with TodoItem
-	            todoItem.setUser(taskUser);
+				// Associate TaskUser with TodoItem
+				todoItem.setUser(taskUser);
 
-	            // Convert ProjectResponse to Project if present
-	            if (todoItemResponse.getProject() != null) {
-	                Project project = new Project();
-	                project.setProjectUid(todoItemResponse.getProject().getProjectUid());
-	                project.setName(todoItemResponse.getProject().getName());
-	                project.setDescription(todoItemResponse.getProject().getDescription());
-	                todoItem.setProject(project);
-	            }
+				// Convert ProjectResponse to Project if present
+				if (todoItemResponse.getProject() != null) {
+					Project project = new Project();
+					project.setProjectUid(todoItemResponse.getProject().getProjectUid());
+					project.setName(todoItemResponse.getProject().getName());
+					project.setDescription(todoItemResponse.getProject().getDescription());
+					todoItem.setProject(project);
+				}
 
-	            return todoItem;
-	        }).collect(Collectors.toList());
+				return todoItem;
+			}).collect(Collectors.toList());
 
-	        taskUser.setTodoItems(todoItems);
-	    }
+			taskUser.setTodoItems(todoItems);
+		}
 
-	    // Convert role IDs to Role entities
-	    if (userCreationResponse.getRoles() != null) {
-	        Set<Role> roles = userCreationResponse.getRoles().stream().map(roleId -> {
-	            Role role = new Role();
-	            role.setId(roleId); // or fetch from DB if needed
-	            return role;
-	        }).collect(Collectors.toSet());
+		// Convert role IDs to Role entities
+		if (userCreationResponse.getRoles() != null) {
+			Set<Role> roles = userCreationResponse.getRoles().stream().map(roleId -> {
+				Role role = new Role();
+				role.setId(roleId); // or fetch from DB if needed
+				return role;
+			}).collect(Collectors.toSet());
 
-	        taskUser.setRoles(roles);
-	    } else {
-	        taskUser.setRoles(new HashSet<>());
-	    }
+			taskUser.setRoles(roles);
+		} else {
+			taskUser.setRoles(new HashSet<>());
+		}
 
-	    return taskUser;
+		return taskUser;
 	}
 
 	public TaskUser convertRequestToEntity(UserCreationRequest userCreationRequest) {
@@ -218,6 +205,7 @@ public class TaskUserService {
 		taskUser.setUsername(userCreationRequest.getUsername());
 		taskUser.setEmail(userCreationRequest.getEmail());
 		taskUser.setPassword(userCreationRequest.getPassword());
+		taskUser.setUserUid(UUID.randomUUID());
 
 		// Convert List of Role IDs to Set<Role>
 		Set<Role> roles = userCreationRequest.getRoles().stream().map(roleId -> {
