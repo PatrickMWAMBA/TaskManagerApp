@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
 public interface TodoItemRepository extends JpaRepository<TodoItem, Long> {
 
   
-  List<TodoItem> findAllByUser_UserUid(UUID projectUid);
+  List<TodoItem> findAllByUser_UserUid(UUID userUid);
   
   List<TodoItem> findAllByProject_ProjectUid(UUID projectUid);
 
